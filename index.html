@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="/">
+  <title>SSE Forwarding</title>
+  <style>
+    html, body {
+      font-family: sans-serif;
+      font-size: 16px;
+    }
+
+    button:disabled {
+      opacity: .5;
+    }
+  </style>
+</head>
+<body>
+  <p>Click the button below to start an SSE connection.</p>
+  <p>Any content returned from the connection will be appended below the button.</p>
+  <button id="start">Click me</button>
+  <ul id="messages"></ul>
+
+  <script>
+    const btn = document.querySelector("#start")
+    const root = document.querySelector("#messages")
+
+    const appendLi = (text, colour = '#333333') => {
+      const el = document.createElement("li")
+      el.style = `color: ${colour}`
+      el.textContent = text
+      root.appendChild(el)
+      window.scrollTo(0, document.body.scrollHeight)
+    }
+
+    btn.addEventListener("click", () => {
+      btn.disabled = true
+      appendLi('Waiting for three events...', '#bbbbbb')
+
+      const es = new EventSource("/sse")
+      es.onmessage = (ev) => {
+        appendLi(ev.data)
+
+        if (ev.data === "[DONE]") {
+          appendLi('Done', 'green')
+          btn.disabled = false
+          es.close()
+        }
+      }
+      es.onerror = (ev) => {
+        appendLi('Error', 'red')
+        btn.disabled = false
+        es.close()
+      }
+    })
+  </script>
+</body>
+</html>
